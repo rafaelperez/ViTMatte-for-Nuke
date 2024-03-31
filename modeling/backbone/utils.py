@@ -3,6 +3,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from typing import Tuple
 
 __all__ = [
     "window_partition",
@@ -13,7 +14,9 @@ __all__ = [
 ]
 
 
-def window_partition(x, window_size):
+def window_partition(
+    x: torch.Tensor, window_size: int
+) -> Tuple[torch.Tensor, Tuple[int, int]]:
     """
     Partition into non-overlapping windows with padding if needed.
     Args:
@@ -37,7 +40,12 @@ def window_partition(x, window_size):
     return windows, (Hp, Wp)
 
 
-def window_unpartition(windows, window_size, pad_hw, hw):
+def window_unpartition(
+    windows: torch.Tensor,
+    window_size: int,
+    pad_hw: Tuple[int, int],
+    hw: Tuple[int, int],
+) -> torch.Tensor:
     """
     Window unpartition into original sequences and removing padding.
     Args:
@@ -60,7 +68,7 @@ def window_unpartition(windows, window_size, pad_hw, hw):
     return x
 
 
-def get_rel_pos(q_size, k_size, rel_pos):
+def get_rel_pos(q_size: int, k_size: int, rel_pos: torch.Tensor) -> torch.Tensor:
     """
     Get relative positional embeddings according to the relative positions of
         query and key sizes.
@@ -93,7 +101,14 @@ def get_rel_pos(q_size, k_size, rel_pos):
     return rel_pos_resized[relative_coords.long()]
 
 
-def add_decomposed_rel_pos(attn, q, rel_pos_h, rel_pos_w, q_size, k_size):
+def add_decomposed_rel_pos(
+    attn: torch.Tensor,
+    q: torch.Tensor,
+    rel_pos_h: torch.Tensor,
+    rel_pos_w: torch.Tensor,
+    q_size: Tuple[int, int],
+    k_size: Tuple[int, int],
+) -> torch.Tensor:
     """
     Calculate decomposed Relative Positional Embeddings from :paper:`mvitv2`.
     https://github.com/facebookresearch/mvit/blob/19786631e330df9f3622e5402b4a419a263a2c80/mvit/models/attention.py   # noqa B950
@@ -125,7 +140,9 @@ def add_decomposed_rel_pos(attn, q, rel_pos_h, rel_pos_w, q_size, k_size):
     return attn
 
 
-def get_abs_pos(abs_pos, has_cls_token, hw):
+def get_abs_pos(
+    abs_pos: torch.Tensor, has_cls_token: bool, hw: Tuple[int, int]
+) -> torch.Tensor:
     """
     Calculate absolute positional embeddings. If needed, resize embeddings and remove cls_token
         dimension for the original embeddings.
@@ -163,7 +180,12 @@ class PatchEmbed(nn.Module):
     """
 
     def __init__(
-        self, kernel_size=(16, 16), stride=(16, 16), padding=(0, 0), in_chans=3, embed_dim=768
+        self,
+        kernel_size=(16, 16),
+        stride=(16, 16),
+        padding=(0, 0),
+        in_chans=3,
+        embed_dim=768,
     ):
         """
         Args:
