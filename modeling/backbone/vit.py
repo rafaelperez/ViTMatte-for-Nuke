@@ -1,5 +1,6 @@
 import logging
 import math
+from typing import Optional, Tuple, Type
 import fvcore.nn.weight_init as weight_init
 import torch
 import torch.nn as nn
@@ -63,7 +64,7 @@ class Attention(nn.Module):
                 trunc_normal_(self.rel_pos_h, std=0.02)
                 trunc_normal_(self.rel_pos_w, std=0.02)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         B, H, W, _ = x.shape
         # qkv with shape (3, B, nHead, H * W, C)
         qkv = self.qkv(x).reshape(B, H * W, 3, self.num_heads, -1).permute(2, 0, 3, 1, 4)
@@ -172,25 +173,25 @@ class ResBottleneckBlock(CNNBlockBase):
 
 class Block(nn.Module):
     """Transformer blocks with support of window attention and residual propagation blocks"""
-
+    __constants__ = ["use_residual_block", "use_convnext_block"]
     def __init__(
         self,
         dim,
-        num_heads,
-        mlp_ratio=4.0,
-        qkv_bias=True,
-        drop_path=0.0,
-        norm_layer=nn.LayerNorm,
-        act_layer=nn.GELU,
-        use_rel_pos=False,
-        rel_pos_zero_init=True,
-        window_size=0,
-        use_cc_attn = False,
-        use_residual_block=False,
-        use_convnext_block=False,
-        input_size=None,
-        res_conv_kernel_size=3,
-        res_conv_padding=1,
+        num_heads: int,
+        mlp_ratio: float = 4.0,
+        qkv_bias: bool = True,
+        drop_path: float = 0.0,
+        norm_layer: Type[nn.Module] = nn.LayerNorm,
+        act_layer: Type[nn.Module] = nn.GELU,
+        use_rel_pos: bool = False,
+        rel_pos_zero_init: bool = True,
+        window_size: int = 0,
+        use_cc_attn: bool = False,
+        use_residual_block: bool = False,
+        use_convnext_block: bool = False,
+        input_size: Optional[Tuple[int, int]] = None,
+        res_conv_kernel_size: int = 3,
+        res_conv_padding: int = 1,
     ):
         """
         Args:
@@ -247,6 +248,8 @@ class Block(nn.Module):
 
 
     def forward(self, x):
+        H, W = 0, 0
+        pad_hw = (0, 0)
         shortcut = x
         x = self.norm1(x)
         # Window partition
