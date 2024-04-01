@@ -42,7 +42,11 @@ https://github.com/rafaelperez/ViTMatte-for-Nuke/assets/1684365/bc02567a-5d95-4f
 
 **ViTMatte** will then be accessible under the toolbar at **Cattery > Matting > ViTMatte**.
 
+## Model Files
 
+Due to file size limitations, the **Cattery** `(ViTMatte.cat)` and **TorchScript** `(VitMatte.pt)` models need to be downloaded from an external server: 
+
+https://drive.google.com/file/d/1bXqdh4dD8bVpSEuNFk50WOEp12I2I4S4/view?usp=sharing
 
 ## License and Acknowledgments
 
