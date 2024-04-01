@@ -1,0 +1,13 @@
+{
+    "minimum_nuke_version_required": 13.2,
+    "version": 1,
+    "category": "Segmentation",
+    "description": "ViTMatte - https://github.com/rafaelperez/ViTMatte-for-Nuke",
+    "cats": [
+        {
+            "filepath": "ViTMatte.gizmo",
+            "name": "ViTMatte",
+            "icon": "ViTMatte.png"
+        }
+    ]
+}
