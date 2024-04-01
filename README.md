@@ -14,10 +14,13 @@ While **ViTMatte** works best on still images and **doesn't have temporal stabil
 
 [![author](https://img.shields.io/badge/by:_Rafael_Silva-red?logo=linkedin&logoColor=white)](https://github.com/rafaelperez)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/vitmatte-boosting-image-matting-with/image-matting-on-composition-1k-1)](https://paperswithcode.com/sota/image-matting-on-composition-1k-1?p=vitmatte-boosting-image-matting-with)
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/vitmatte-boosting-image-matting-with/image-matting-on-distinctions-646)](https://paperswithcode.com/sota/image-matting-on-distinctions-646?p=vitmatte-boosting-image-matting-with)
 
 </div>
+
+https://github.com/rafaelperez/ViTMatte-for-Nuke/assets/1684365/bc02567a-5d95-4f5d-a8ca-45ed1e9b337c
 
 ## Compatibility
 
