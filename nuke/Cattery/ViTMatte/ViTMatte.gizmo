@@ -1,0 +1,73 @@
+Gizmo {
+ name ViTMatte
+ addUserKnob {20 ViTMatte}
+ addUserKnob {26 localGPU l "Local GPU:" T ""}
+ addUserKnob {26 gpuName l "" -STARTLINE T ""}
+ addUserKnob {6 useGPU l "Use GPU if available" +STARTLINE}
+ useGPU true
+ addUserKnob {26 ""}
+ addUserKnob {20 infoTab l Info}
+ addUserKnob {26 toolName l "" +STARTLINE T "<font size='7'>ViTMatte</font> v1.0.0 | Released 2024-03-31"}
+ addUserKnob {26 ""}
+ addUserKnob {26 authorName l "" +STARTLINE T "Rafael Silva"}
+ addUserKnob {26 authorMail l "" +STARTLINE T "<a href=\"mailto:rafael@rafael.ai\"><span style=\"color:#C8C8C8;\">rafael@rafael.ai</a>"}
+ addUserKnob {26 ""}
+ addUserKnob {26 credit l "" +STARTLINE T "<br>TorchScript port based on the official RIFE implementation.<br><a href=\"https://github.com/hustvl/ViTMatte\"><span style=\"color:#C8C8C8;\">https://github.com/hustvl/ViTMatte</a><br>"}
+ addUserKnob {26 ""}
+ addUserKnob {26 thanks l "" +STARTLINE T "Don't hesitate to reach out with any bugs, suggestions, or questions."}
+}
+ Input {
+  inputs 0
+  name Input1
+  xpos -260
+  ypos -562
+ }
+ Assert {
+  expression {{"\$nuke_version > 13.208"}}
+  message "Nuke13.2v8 or higher required."
+  name Assert1
+  xpos -260
+  ypos -490
+ }
+ Colorspace {
+  colorspace_out sRGB
+  name Colorspace1
+  xpos -260
+  ypos -418
+ }
+ Remove {
+  operation keep
+  channels rgba
+  name Remove1
+  label "rgba only"
+  xpos -260
+  ypos -352
+ }
+ Crop {
+  box {0 0 {width} {height}}
+  crop false
+  name Crop1
+  xpos -260
+  ypos -274
+ }
+ Inference {
+  useGPUIfAvailable {{parent.useGPU}}
+  modelFile "\[lsearch -inline \[plugins -all ViTMatte.cat] *.cat]"
+  halfPrecision true
+  name Inference1
+  onCreate "\nthis = nuke.thisNode()\ngpuName = this.knob(\"gpuName\").value()\nthis.parent().knob(\"gpuName\").setValue(gpuName)\n"
+  xpos -260
+  ypos -202
+ }
+ Colorspace {
+  colorspace_in sRGB
+  name Colorspace2
+  xpos -260
+  ypos -130
+ }
+ Output {
+  name Output1
+  xpos -260
+  ypos -58
+ }
+end_group

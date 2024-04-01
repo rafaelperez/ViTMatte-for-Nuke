@@ -1,0 +1,10 @@
+CatFileCreator {
+ torchScriptFile "\[python \{nuke.script_directory()\}]/Cattery/ViTMatte/ViTMatte.pt"
+ catFile "\[python \{nuke.script_directory()\}]/Cattery/ViTMatte/ViTMatte.cat"
+ channelsIn rgba.red,rgba.green,rgba.blue,rgba.alpha
+ channelsOut rgba.alpha
+ modelId ViTMatte
+ name CatFileCreator_ViTMatte
+ tile_color 0x1f00ffff
+ postage_stamp false
+}
