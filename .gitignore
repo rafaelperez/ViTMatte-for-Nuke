@@ -141,3 +141,6 @@ dmypy.json
 .pyre/
 
 cluster.sh
+*.cat
+session.vim
+.undodir
