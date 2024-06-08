@@ -2,10 +2,7 @@ from typing import Dict
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision
-import os
 
-from detectron2.structures import ImageList
 
 class ViTMatte(nn.Module):
     def __init__(self,
@@ -52,9 +49,10 @@ class ViTMatte(nn.Module):
         """
         Normalize, pad and batch the input images.
         """
-        images = batched_inputs["image"].to(self.device)
-        trimap = batched_inputs['trimap'].to(self.device)
+        images = batched_inputs["image"]
+        trimap = batched_inputs['trimap']
         images = (images - self.pixel_mean) / self.pixel_std
+        device = images.device
 
         if 'fg' in batched_inputs.keys():
             trimap[trimap < 85] = 0
@@ -67,12 +65,12 @@ class ViTMatte(nn.Module):
         if images.shape[-1]%32!=0 or images.shape[-2]%32!=0:
             new_H = (32-images.shape[-2]%32) + H
             new_W = (32-images.shape[-1]%32) + W
-            new_images = torch.zeros((images.shape[0], images.shape[1], new_H, new_W)).to(self.device)
+            new_images = torch.zeros((images.shape[0], images.shape[1], new_H, new_W)).to(device)
             new_images[:,:,:H,:W] = images[:,:,:,:]
             images = new_images
 
         if "alpha" in batched_inputs:
-            phas = batched_inputs["alpha"].to(self.device)
+            phas = batched_inputs["alpha"].to(device)
         else:
             phas = None
 

@@ -131,10 +131,13 @@ class Detail_Capture(nn.Module):
 
     def forward(self, features, images):
         detail_features = self.convstream(images)
-        for i, fusion_block in enumerate(self.fusion_blks):
-            d_name_ = 'D'+str(len(self.fusion_blks)-i-1)
-            features = fusion_block(features, detail_features[d_name_])
-        
+
+        # unrolled loop
+        features = self.fusion_blks[0](features, detail_features["D3"])
+        features = self.fusion_blks[1](features, detail_features["D2"])
+        features = self.fusion_blks[2](features, detail_features["D1"])
+        features = self.fusion_blks[3](features, detail_features["D0"])
+
         phas = torch.sigmoid(self.matting_head(features))
 
         return {'phas': phas}

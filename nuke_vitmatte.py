@@ -1,7 +1,6 @@
 import logging
 
 import torch
-from detectron2.checkpoint import DetectionCheckpointer
 from torch import nn
 
 from modeling import Detail_Capture, ViT, ViTMatte
@@ -77,7 +76,8 @@ if __name__ == "__main__":
     # Load the ViTMatte model
     vitmatte.to(device)
     vitmatte.eval()
-    DetectionCheckpointer(vitmatte).load(VITMATTE_MODEL)
+    checkpoint = torch.load(VITMATTE_MODEL, map_location=torch.device("cpu"))
+    vitmatte.load_state_dict(checkpoint, strict=False)
 
     # Convert the ViTMatte model to a TorchScript model
     vitmatte_nuke = VitMatteNuke(vitmatte)
