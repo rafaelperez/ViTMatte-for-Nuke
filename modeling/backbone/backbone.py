@@ -1,11 +1,22 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 from abc import ABCMeta, abstractmethod
-from typing import Dict
+from typing import Dict, Optional
 import torch.nn as nn
 
-from detectron2.layers import ShapeSpec
-
 __all__ = ["Backbone"]
+
+
+class ShapeSpec:
+    """
+    A simple structure that contains basic shape specification about a tensor.
+    It is often used as the auxiliary inputs/outputs of models,
+    to complement the lack of shape inference ability among pytorch modules.
+    """
+
+    channels: Optional[int] = None
+    height: Optional[int] = None
+    width: Optional[int] = None
+    stride: Optional[int] = None
 
 
 class Backbone(nn.Module, metaclass=ABCMeta):

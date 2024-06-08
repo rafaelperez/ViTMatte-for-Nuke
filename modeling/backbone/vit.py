@@ -1,14 +1,10 @@
 import logging
 import math
 from typing import Optional, Tuple, Type
-import fvcore.nn.weight_init as weight_init
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-from detectron2.layers import CNNBlockBase, Conv2d, get_norm
-from detectron2.modeling.backbone.fpn import _assert_strides_are_log2_contiguous
-from fairscale.nn.checkpoint import checkpoint_wrapper
-from timm.models.layers import DropPath, Mlp, trunc_normal_
+from .timm_layers import DropPath, Mlp, trunc_normal_
 from .backbone import Backbone
 from .utils import (
     PatchEmbed,
@@ -22,6 +18,22 @@ logger = logging.getLogger(__name__)
 
 
 __all__ = ["ViT"]
+
+
+def c2_msra_fill(module: nn.Module) -> None:
+    """
+    Initialize `module.weight` using the "MSRAFill" implemented in Caffe2.
+    Also initializes `module.bias` to 0.
+
+    Args:
+        module (torch.nn.Module): module to initialize.
+    """
+    # pyre-fixme[6]: For 1st param expected `Tensor` but got `Union[Module, Tensor]`.
+    nn.init.kaiming_normal_(module.weight, mode="fan_out", nonlinearity="relu")
+    if module.bias is not None:
+        # pyre-fixme[6]: Expected `Tensor` for 1st param but got `Union[nn.Module,
+        #  torch.Tensor]`.
+        nn.init.constant_(module.bias, 0)
 
 
 class Attention(nn.Module):
@@ -83,30 +95,111 @@ class Attention(nn.Module):
         return x
 
 class LayerNorm(nn.Module):
-    r""" LayerNorm that supports two data formats: channels_last (default) or channels_first. 
-    The ordering of the dimensions in the inputs. channels_last corresponds to inputs with 
-    shape (batch_size, height, width, channels) while channels_first corresponds to inputs 
-    with shape (batch_size, channels, height, width).
     """
-    def __init__(self, normalized_shape, eps=1e-6, data_format="channels_last"):
+    A LayerNorm variant, popularized by Transformers, that performs point-wise mean and
+    variance normalization over the channel dimension for inputs that have shape
+    (batch_size, channels, height, width).
+    https://github.com/facebookresearch/ConvNeXt/blob/d1fa8f6fef0a165b27399986cc2bdacc92777e40/models/convnext.py#L119  # noqa B950
+    """
+
+    def __init__(self, normalized_shape, eps=1e-6):
         super().__init__()
         self.weight = nn.Parameter(torch.ones(normalized_shape))
         self.bias = nn.Parameter(torch.zeros(normalized_shape))
         self.eps = eps
-        self.data_format = data_format
-        if self.data_format not in ["channels_last", "channels_first"]:
-            raise NotImplementedError 
-        self.normalized_shape = (normalized_shape, )
-    
+        self.normalized_shape = (normalized_shape,)
+
     def forward(self, x):
-        if self.data_format == "channels_last":
-            return F.layer_norm(x, self.normalized_shape, self.weight, self.bias, self.eps)
-        elif self.data_format == "channels_first":
-            u = x.mean(1, keepdim=True)
-            s = (x - u).pow(2).mean(1, keepdim=True)
-            x = (x - u) / torch.sqrt(s + self.eps)
-            x = self.weight[:, None, None] * x + self.bias[:, None, None]
-            return x
+        u = x.mean(1, keepdim=True)
+        s = (x - u).pow(2).mean(1, keepdim=True)
+        x = (x - u) / torch.sqrt(s + self.eps)
+        x = self.weight[:, None, None] * x + self.bias[:, None, None]
+        return x
+
+
+
+
+class Conv2d(torch.nn.Conv2d):
+    """
+    A wrapper around :class:`torch.nn.Conv2d` to support empty inputs and more features.
+    """
+
+    def __init__(self, *args, **kwargs):
+        """
+        Extra keyword arguments supported in addition to those in `torch.nn.Conv2d`:
+
+        Args:
+            norm (nn.Module, optional): a normalization layer
+            activation (callable(Tensor) -> Tensor): a callable activation function
+
+        It assumes that norm layer is used before activation.
+        """
+        norm = kwargs.pop("norm", None)
+        activation = kwargs.pop("activation", None)
+        super().__init__(*args, **kwargs)
+
+        self.norm = norm
+        self.activation = activation
+
+    def forward(self, x):
+        # torchscript does not support SyncBatchNorm yet
+        # https://github.com/pytorch/pytorch/issues/40507
+        # and we skip these codes in torchscript since:
+        # 1. currently we only support torchscript in evaluation mode
+        # 2. features needed by exporting module to torchscript are added in PyTorch 1.6 or
+        # later version, `Conv2d` in these PyTorch versions has already supported empty inputs.
+
+        x = F.conv2d(
+            x, self.weight, self.bias, self.stride, self.padding, self.dilation, self.groups
+        )
+        if self.norm is not None:
+            x = self.norm(x)
+        if self.activation is not None:
+            x = self.activation(x)
+        return x
+
+
+class CNNBlockBase(nn.Module):
+    """
+    A CNN block is assumed to have input channels, output channels and a stride.
+    The input and output of `forward()` method must be NCHW tensors.
+    The method can perform arbitrary computation but must match the given
+    channels and stride specification.
+
+    Attribute:
+        in_channels (int):
+        out_channels (int):
+        stride (int):
+    """
+
+    def __init__(self, in_channels, out_channels, stride):
+        """
+        The `__init__` method of any subclass should also contain these arguments.
+
+        Args:
+            in_channels (int):
+            out_channels (int):
+            stride (int):
+        """
+        super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.stride = stride
+
+    def freeze(self):
+        """
+        Make this block not trainable.
+        This method sets all parameters to `requires_grad=False`,
+        and convert all BatchNorm layers to FrozenBatchNorm
+
+        Returns:
+            the block itself
+        """
+        pass
+        # for p in self.parameters():
+        #     p.requires_grad = False
+        # FrozenBatchNorm2d.convert_frozen_batchnorm(self)
+        # return self
 
 class ResBottleneckBlock(CNNBlockBase):
     """
@@ -137,7 +230,7 @@ class ResBottleneckBlock(CNNBlockBase):
         super().__init__(in_channels, out_channels, 1)
 
         self.conv1 = Conv2d(in_channels, bottleneck_channels, 1, bias=False)
-        self.norm1 = get_norm(norm, bottleneck_channels)
+        self.norm1 = LayerNorm(bottleneck_channels)
         self.act1 = act_layer()
 
         self.conv2 = Conv2d(
@@ -147,14 +240,16 @@ class ResBottleneckBlock(CNNBlockBase):
             padding=conv_paddings,
             bias=False,
         )
-        self.norm2 = get_norm(norm, bottleneck_channels)
+        self.norm2 = LayerNorm(bottleneck_channels)
+
         self.act2 = act_layer()
 
         self.conv3 = Conv2d(bottleneck_channels, out_channels, 1, bias=False)
-        self.norm3 = get_norm(norm, out_channels)
+        self.norm3 = LayerNorm(out_channels)
+
 
         for layer in [self.conv1, self.conv2, self.conv3]:
-            weight_init.c2_msra_fill(layer)
+            c2_msra_fill(layer)
         for layer in [self.norm1, self.norm2]:
             layer.weight.data.fill_(1.0)
             layer.bias.data.zero_()
@@ -239,9 +334,15 @@ class Block(nn.Module):
                 conv_kernels=res_conv_kernel_size,
                 conv_paddings=res_conv_padding,
             )
+        else:
+            # required for jit on PyTorch 1.6
+            self.residual = nn.Identity()
         self.use_convnext_block = use_convnext_block
         if use_convnext_block:
             self.convnext = ConvNextBlock(dim = dim)
+        else:
+            # required for jit on PyTorch 1.6
+            self.convnext = nn.Identity()
 
         if use_cc_attn:
             self.attn = CrissCrossAttention(dim)
@@ -371,7 +472,8 @@ class ViT(Backbone):
                 res_conv_padding=res_conv_padding,
             )
             if use_act_checkpoint:
-                block = checkpoint_wrapper(block)
+                # removed activation checkpointing for jit compatibility
+                pass
             self.blocks.append(block)
 
         self._out_feature_channels = {out_feature: embed_dim}
