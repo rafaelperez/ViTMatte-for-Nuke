@@ -1,11 +1,14 @@
 Gizmo {
- name ViTMatte
  addUserKnob {20 ViTMatte}
  addUserKnob {26 localGPU l "Local GPU:" T ""}
- addUserKnob {26 gpuName l "" -STARTLINE T ""}
+ addUserKnob {26 gpuName l "" -STARTLINE T "NVIDIA GeForce RTX 3060"}
  addUserKnob {6 useGPU l "Use GPU if available" +STARTLINE}
  useGPU true
  addUserKnob {26 ""}
+ addUserKnob {4 inference_format l "inference format" M {512 1024 2048}}
+ inference_format 1024
+ addUserKnob {7 edge_thickness l "edge thickness" R 0 100}
+ edge_thickness 30
  addUserKnob {20 infoTab l Info}
  addUserKnob {26 toolName l "" +STARTLINE T "<font size='7'>ViTMatte</font> v1.0.0 | Released 2024-03-31"}
  addUserKnob {26 ""}
@@ -20,54 +23,138 @@ Gizmo {
   inputs 0
   name Input1
   xpos -260
-  ypos -562
+  ypos -736
  }
  Assert {
   expression {{"\$nuke_version > 13.208"}}
   message "Nuke13.2v8 or higher required."
   name Assert1
   xpos -260
-  ypos -490
+  ypos -664
  }
  Colorspace {
   colorspace_out sRGB
   name Colorspace1
   xpos -260
-  ypos -418
+  ypos -592
+ }
+set N3d852e00 [stack 0]
+ Dot {
+  name Dot3
+  xpos 18
+  ypos -588
+ }
+set N78bdeb60 [stack 0]
+ Dot {
+  name Dot1
+  xpos 140
+  ypos -588
+ }
+ FilterErode {
+  size {{-parent.edge_thickness}}
+  name FilterErode2
+  xpos 106
+  ypos -439
+ }
+set N2d1f4c30 [stack 0]
+ Dot {
+  name Dot2
+  xpos 252
+  ypos -429
+ }
+ FilterErode {
+  size {{-parent.edge_thickness}}
+  filter gaussian
+  name FilterErode3
+  xpos 218
+  ypos -38
+ }
+push $N2d1f4c30
+push $N78bdeb60
+ FilterErode {
+  size {{parent.edge_thickness}}
+  name FilterErode1
+  xpos -16
+  ypos -379
+ }
+ Dissolve {
+  inputs 2
+  channels rgba
+  which 0.5
+  name Dissolve1
+  xpos 106
+  ypos -373
+ }
+ Reformat {
+  type "to box"
+  box_width 1024
+  box_height {{"\[python int(nuke.thisGroup().knob('inference_format').value())]"}}
+  resize height
+  name Reformat2
+  selected true
+  xpos 106
+  ypos -332
  }
  Remove {
   operation keep
   channels rgba
   name Remove1
   label "rgba only"
-  xpos -260
-  ypos -352
+  xpos 106
+  ypos -278
  }
  Crop {
   box {0 0 {width} {height}}
   crop false
   name Crop1
-  xpos -260
-  ypos -274
+  xpos 106
+  ypos -209
  }
  Inference {
   useGPUIfAvailable {{parent.useGPU}}
   modelFile "\[lsearch -inline \[plugins -all ViTMatte.cat] *.cat]"
   halfPrecision true
+  serialiseKnob {}
   name Inference1
   onCreate "\nthis = nuke.thisNode()\ngpuName = this.knob(\"gpuName\").value()\nthis.parent().knob(\"gpuName\").setValue(gpuName)\n"
+  xpos 106
+  ypos -164
+ }
+ Reformat {
+  type "to box"
+  box_width {{Input1.width}}
+  box_height {{Input1.height}}
+  box_fixed true
+  name Reformat1
+  xpos 106
+  ypos -101
+ }
+ Merge2 {
+  inputs 2
+  operation mask
+  name Merge1
+  xpos 106
+  ypos -32
+ }
+push $N3d852e00
+ Copy {
+  inputs 2
+  from0 rgba.alpha
+  to0 rgba.alpha
+  bbox B
+  name Copy1
   xpos -260
-  ypos -202
+  ypos -38
  }
  Colorspace {
   colorspace_in sRGB
   name Colorspace2
   xpos -260
-  ypos -130
+  ypos 66
  }
  Output {
   name Output1
   xpos -260
-  ypos -58
+  ypos 185
  }
 end_group
