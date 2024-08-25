@@ -140,7 +140,18 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# Util scripts
 cluster.sh
-*.cat
 session.vim
 .undodir
+justfile
+
+# IDE
+.vscode/
+.idea/
+
+# Model and Nuke Files
+*.cat
+*.autosave
+*.pt
+*.pth
