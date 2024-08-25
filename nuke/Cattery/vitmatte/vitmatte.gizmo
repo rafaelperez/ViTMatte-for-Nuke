@@ -1,0 +1,240 @@
+Group {
+ name ViTMatte
+ addUserKnob {20 ViTMatte}
+ addUserKnob {26 localGPU l "Local GPU:" T ""}
+ addUserKnob {26 gpuName l "" -STARTLINE T ""}
+ addUserKnob {6 useGPU l "Use GPU if available" +STARTLINE}
+ useGPU true
+ addUserKnob {26 outputOptions_divider l "<b>Output Options</b>"}
+ addUserKnob {4 view l View M {"Final Result" Trimap "" "" ""}}
+ addUserKnob {4 downrez l Downrez t "Scales down the input to optimize optical flow calculation.  \n\nBy reducing the input size, memory requirements are lowered. For some 4K shots with significant motion, this preprocessing can also refine the quality of the retime." M {"1/1 (Full Res)" 1/2 1/4}}
+ addUserKnob {6 detail l "High detail" +STARTLINE}
+ addUserKnob {7 fineTune l "Fine Tune"}
+ fineTune 0.5
+ addUserKnob {26 trimapOptions_divider l "<b>Trimap Options</b>"}
+ addUserKnob {7 edge_thickness l "Edge Thickness" R 0 100}
+ edge_thickness 10
+ addUserKnob {6 trimap_control l "Enable trimap generation" +STARTLINE}
+ trimap_control true
+ addUserKnob {20 infoTab l Info}
+ addUserKnob {26 toolName l "" +STARTLINE T "<font size='7'>ViTMatte</font> v1.1.0 | Released 2024-08-25"}
+ addUserKnob {26 ""}
+ addUserKnob {26 authorName l "" +STARTLINE T "Rafael Silva"}
+ addUserKnob {26 authorMail l "" +STARTLINE T "<a href=\"mailto:rafael@rafael.ai\"><span style=\"color:#C8C8C8;\">rafael@rafael.ai</a> - <a href=\"https://github.com/rafaelperez/ViTMatte-for-Nuke\"><span style=\"color:#C8C8C8;\">GitHub</a>"}
+ addUserKnob {26 ""}
+ addUserKnob {26 credit l "" +STARTLINE T "TorchScript port based on the official <a href=\"https://github.com/hustvl/ViTMatte\"><span style=\"color:#C8C8C8;\">ViTMatte</a> implementation.<br><br>Special thanks to the ViTMatte authors for their work<br>and <a href=\"https://github.com/vinavfx\"><span style=\"color:#C8C8C8;\">Francisco Contreras</a> for testing and contributions."}
+ addUserKnob {26 ""}
+ addUserKnob {26 thanks l "" +STARTLINE T "Don't hesitate to reach out with any bugs, suggestions, or questions."}
+}
+ BackdropNode {
+  inputs 0
+  name BackdropNode1
+  tile_color 0x444444ff
+  label "GENERATE TRIMAP"
+  note_font_size 22
+  note_font_color 0xddddddff
+  xpos -36
+  ypos -777
+  bdwidth 513
+  bdheight 353
+ }
+ Input {
+  inputs 0
+  name Input1
+  xpos -260
+  ypos -1114
+ }
+ Assert {
+  expression {{"\$nuke_version > 13.208"}}
+  message "Nuke13.2v8 or higher required."
+  name Assert1
+  xpos -260
+  ypos -1042
+ }
+  Shuffle2 {
+  fromInput1 {{0} B}
+  fromInput2 {{0} B}
+  name Shuffle1
+  xpos -260
+  ypos -994
+}
+ Remove {
+  operation keep
+  channels rgba
+  name Remove1
+  label "rgba only"
+  xpos -260
+  ypos -928
+ }
+ Dot {
+  name Dot7
+  xpos -226
+  ypos -822
+ }
+set N85766640 [stack 0]
+ Colorspace {
+  colorspace_out sRGB
+  name Colorspace1
+  xpos -40
+  ypos -826
+ }
+ Dot {
+  name Dot5
+  xpos -6
+  ypos -702
+ }
+set N8cf20b20 [stack 0]
+ Dot {
+  name Dot2
+  xpos 104
+  ypos -702
+ }
+set Nd2ff86c0 [stack 0]
+push $Nd2ff86c0
+ Dot {
+  name Dot1
+  xpos 214
+  ypos -702
+ }
+set Ndc7f89b0 [stack 0]
+ Dot {
+  name Dot4
+  xpos 324
+  ypos -702
+ }
+ Dilate {
+  channels alpha
+  size {{-parent.edge_thickness}}
+  name Dilate2
+  xpos 290
+  ypos -641
+ }
+push $Ndc7f89b0
+ Dilate {
+  channels alpha
+  size {{parent.edge_thickness}}
+  name Dilate1
+  xpos 180
+  ypos -641
+ }
+ Dissolve {
+  inputs 2
+  channels rgba
+  which 0.5
+  name Dissolve1
+  xpos 180
+  ypos -562
+ }
+ CopyBBox {
+  inputs 2
+  name CopyBBox1
+  xpos 70
+  ypos -514
+ }
+push $N8cf20b20
+ Switch {
+  inputs 2
+  which {{parent.trimap_control}}
+  name Switch1
+  xpos -40
+  ypos -466
+ }
+ Dot {
+  name Dot6
+  xpos -6
+  ypos -390
+ }
+set Nf06d0610 [stack 0]
+ Dot {
+  name Dot3
+  xpos 104
+  ypos -390
+ }
+ Expression {
+  expr3 "a <  0.01 ? 0 : a > 0.99 ? 1 : 0.5"
+  name Expression2
+  xpos 70
+  ypos -274
+ }
+ Shuffle2 {
+  fromInput1 {{0} B}
+  fromInput2 {{0} B}
+  mappings "4 rgba.alpha 0 3 rgba.red 0 0 rgba.alpha 0 3 rgba.green 0 1 rgba.alpha 0 3 rgba.blue 0 2 rgba.alpha 0 3 rgba.alpha 0 3"
+  name Shuffle2
+  xpos 70
+  ypos -202
+ }
+ Dot {
+  name Dot8
+  xpos 104
+  ypos 42
+ }
+push $Nf06d0610
+ Reformat {
+  type scale
+  scale {{"2 ** (parent.downrez * -1.0)"}}
+  resize height
+  pbb true
+  name Reformat1
+  xpos -40
+  ypos -346
+ }
+ Expression {
+  temp_name0 gamma
+  temp_expr0 parent.fineTune
+  channel0 {rgba.red -rgba.green -rgba.blue none}
+  channel1 {-rgba.red rgba.green -rgba.blue none}
+  channel2 {-rgba.red -rgba.green rgba.blue none}
+  expr3 "a <  0.01 ? 0 : a > 0.99 ? 1 : gamma"
+  name Expression1
+  xpos -40
+  ypos -274
+ }
+ Inference {
+  useGPUIfAvailable {{parent.useGPU}}
+  modelFile "\[plugins -all \"vitmatte_\[expr \{\[value parent.detail]? \"large\" : \"small\"\}].cat\"]"
+  halfPrecision true
+  serialiseKnob {}
+  name Inference1
+  onCreate "\nthis = nuke.thisNode()\ngpuName = this.knob(\"gpuName\").value()\nthis.parent().knob(\"gpuName\").setValue(gpuName)\n"
+  halfPrecision {{"\$nuke_version > 14"}}
+  label "vitmatte_\[expr \{\[value parent.detail]? \"large\" : \"small\"\}]"
+  xpos -40
+  ypos -209
+ }
+ Reformat {
+  type scale
+  scale {{"1/(2 ** (parent.downrez * -1.0))"}}
+  pbb true
+  name Reformat2
+  xpos -40
+  ypos -106
+ }
+push $N85766640
+ Copy {
+  inputs 2
+  from0 rgba.alpha
+  to0 rgba.alpha
+  bbox B
+  name Copy1
+  xpos -260
+  ypos -113
+ }
+ BlackOutside {
+  name BlackOutside1
+  xpos -260
+  ypos -34
+ }
+ Switch {
+  inputs 2
+  which {{parent.view}}
+  name Switch2
+  xpos -260
+  ypos 38
+ }
+ Output {
+  name Output1
+  xpos -260
+  ypos 158
+ }
+end_group

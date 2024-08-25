@@ -1,10 +1,24 @@
 CatFileCreator {
- torchScriptFile "\[python \{nuke.script_directory()\}]/Cattery/ViTMatte/ViTMatte.pt"
- catFile "\[python \{nuke.script_directory()\}]/Cattery/ViTMatte/ViTMatte.cat"
+ torchScriptFile "\[python \{nuke.script_directory()\}]/vitmatte_small.pt"
+ catFile "\[python \{nuke.script_directory()\}]/Cattery/vitmatte/vitmatte_small.cat"
  channelsIn rgba.red,rgba.green,rgba.blue,rgba.alpha
  channelsOut rgba.alpha
- modelId ViTMatte
- name CatFileCreator_ViTMatte
+ modelId ViTMatte_small
+ name CatFileCreator_ViTMatte_small
  tile_color 0x1f00ffff
+ xpos 0
+ ypos 0
+ postage_stamp false
+}
+CatFileCreator {
+ torchScriptFile "\[python \{nuke.script_directory()\}]/vitmatte_large.pt"
+ catFile "\[python \{nuke.script_directory()\}]/Cattery/vitmatte/vitmatte_large.cat"
+ channelsIn rgba.red,rgba.green,rgba.blue,rgba.alpha
+ channelsOut rgba.alpha
+ modelId ViTMatte_large
+ name CatFileCreator_ViTMatte_large
+ tile_color 0x1f00ffff
+ xpos 0
+ ypos 60
  postage_stamp false
 }

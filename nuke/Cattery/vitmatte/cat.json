@@ -5,9 +5,9 @@
     "description": "ViTMatte - https://github.com/rafaelperez/ViTMatte-for-Nuke",
     "cats": [
         {
-            "filepath": "ViTMatte.gizmo",
+            "filepath": "vitmatte.gizmo",
             "name": "ViTMatte",
-            "icon": "ViTMatte.png"
+            "icon": "vitmatte.png"
         }
     ]
 }
