@@ -43,7 +43,7 @@ https://github.com/rafaelperez/ViTMatte-for-Nuke/assets/1684365/bc02567a-5d95-4f
 2. Copy the extracted `Cattery` folder to `.nuke` or your plugins path.
 3. In the toolbar, choose **Cattery > Update** or simply **restart** Nuke.
 
-**ViTMatte** will then be accessible under the toolbar at **Cattery > Matting > ViTMatte**.
+**ViTMatte** will then be accessible under the toolbar at **Cattery > Segmentation > ViTMatte**.
 
 ### ⚠️ Extra Steps for Nuke 13
 
