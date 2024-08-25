@@ -5,7 +5,7 @@ from torch import nn
 
 from modeling import Detail_Capture, ViT, ViTMatte
 
-DESTINATION = "./nuke/Cattery/ViTMatte/ViTMatte_{0}.pt"
+DESTINATION = "./nuke/vitmatte_{0}.pt"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -69,6 +69,7 @@ def create_vitmatte(model_size: str) -> nn.Module:
     vitmatte.to(device)
     vitmatte.eval()
     vitmatte.load_state_dict(checkpoint, strict=False)
+    vitmatte.half()
     return vitmatte
 
 
