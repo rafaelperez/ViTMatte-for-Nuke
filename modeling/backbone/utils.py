@@ -134,9 +134,10 @@ def add_decomposed_rel_pos(
     rel_h = torch.einsum("bhwc,hkc->bhwk", r_q, Rh)
     rel_w = torch.einsum("bhwc,wkc->bhwk", r_q, Rw)
 
-    attn = (
-        attn.view(B, q_h, q_w, k_h, k_w) + rel_h[:, :, :, :, None] + rel_w[:, :, :, None, :]
-    ).view(B, q_h * q_w, k_h * k_w)
+    attn = attn.view(B, q_h, q_w, k_h, k_w)
+    attn.add_(rel_h[:, :, :, :, None])
+    attn.add_(rel_w[:, :, :, None, :])
+    attn = attn.view(B, q_h * q_w, k_h * k_w)
 
     return attn
 
