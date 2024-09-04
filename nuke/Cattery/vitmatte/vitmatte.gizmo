@@ -102,18 +102,16 @@ set Ndc7f89b0 [stack 0]
   xpos 324
   ypos -702
  }
- Dilate {
-  channels alpha
+ Erode {
   size {{-parent.edge_thickness}}
-  name Dilate2
+  name Erode2
   xpos 290
   ypos -641
  }
 push $Ndc7f89b0
- Dilate {
-  channels alpha
+ Erode {
   size {{parent.edge_thickness}}
-  name Dilate1
+  name Erode1
   xpos 180
   ypos -641
  }
