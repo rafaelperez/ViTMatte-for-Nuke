@@ -30,6 +30,7 @@ https://github.com/rafaelperez/ViTMatte-for-Nuke/assets/1684365/bc02567a-5d95-4f
 
 - **High quality** natural matting results
 - **Fast**, less than one second per frame **(2K)**.
+- **4K Support** even on 8GB GPUs.
 - **Commercial use** license.
 - **Overscan** and **bounding box** support
 - **Easy installation** using **Nuke's Cattery** system
@@ -89,7 +90,12 @@ Check out the [video](https://www.youtube.com/watch?v=w9sZdtiwuFE) and his chann
 
 ## Release Notes
 
-**Latest version:** 1.1
+**Latest version:** 1.2
+
+- [x] **Memory Optimization**: Reduced peak memory usage by 3x, enabling 4K image processing on 8GB GPUs.
+- [x] **Improved Gizmos Trimap**: Swapped `Dilate` for `Erode` to reduce boiling edges.
+
+**Version 1.1**
 
 - [x] Added *fast* model. This model is more suited for improving binary masks, like those from Segment Anything for Nuke.
 - [x] Reduced memory usage with fp16 quantization

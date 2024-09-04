@@ -81,14 +81,23 @@ class Attention(nn.Module):
         # qkv with shape (3, B, nHead, H * W, C)
         qkv = self.qkv(x).reshape(B, H * W, 3, self.num_heads, -1).permute(2, 0, 3, 1, 4)
         # q, k, v with shape (B * nHead, H * W, C)
-        q, k, v = qkv.reshape(3, B * self.num_heads, H * W, -1).unbind(0)
+        q, k, v = qkv.unbind(0)
 
-        attn = (q * self.scale) @ k.transpose(-2, -1)
-        attn = add_decomposed_rel_pos(attn, q, self.rel_pos_h, self.rel_pos_w, (H, W), (H, W))
-        attn = attn.softmax(dim=-1)
+        output = torch.zeros(B, H, W, self.num_heads * v.shape[-1], device=x.device, dtype=x.dtype)
 
-        x = (attn @ v).view(B, self.num_heads, H, W, -1).permute(0, 2, 3, 1, 4).reshape(B, H, W, -1)
-        x = self.proj(x)
+        for head in range(self.num_heads):
+            q_head = q[:, head, :, :]
+            k_head = k[:, head, :, :]
+            v_head = v[:, head, :, :]
+
+            attn = (q_head * self.scale) @ k_head.transpose(-2, -1)
+            attn = add_decomposed_rel_pos(attn, q_head, self.rel_pos_h, self.rel_pos_w, (H, W), (H, W))
+            attn = attn.softmax(dim=-1)
+
+            x_head = (attn @ v_head).view(B, H, W, -1)
+            output[:, :, :, head * v_head.shape[-1]:(head + 1) * v_head.shape[-1]] = x_head
+
+        x = self.proj(output)
 
         return x
 

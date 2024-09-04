@@ -17,7 +17,7 @@ Group {
  addUserKnob {6 trimap_control l "Enable trimap generation" +STARTLINE}
  trimap_control true
  addUserKnob {20 infoTab l Info}
- addUserKnob {26 toolName l "" +STARTLINE T "<font size='7'>ViTMatte</font> v1.1.0 | Released 2024-08-25"}
+ addUserKnob {26 toolName l "" +STARTLINE T "<font size='7'>ViTMatte</font> v1.2.0 | Released 2024-09-03"}
  addUserKnob {26 ""}
  addUserKnob {26 authorName l "" +STARTLINE T "Rafael Silva"}
  addUserKnob {26 authorMail l "" +STARTLINE T "<a href=\"mailto:rafael@rafael.ai\"><span style=\"color:#C8C8C8;\">rafael@rafael.ai</a> - <a href=\"https://github.com/rafaelperez/ViTMatte-for-Nuke\"><span style=\"color:#C8C8C8;\">GitHub</a>"}
@@ -102,18 +102,16 @@ set Ndc7f89b0 [stack 0]
   xpos 324
   ypos -702
  }
- Dilate {
-  channels alpha
+ Erode {
   size {{-parent.edge_thickness}}
-  name Dilate2
+  name Erode2
   xpos 290
   ypos -641
  }
 push $Ndc7f89b0
- Dilate {
-  channels alpha
+ Erode {
   size {{parent.edge_thickness}}
-  name Dilate1
+  name Erode1
   xpos 180
   ypos -641
  }
